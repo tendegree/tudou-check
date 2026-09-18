@@ -1,6 +1,5 @@
 # Gitee Go 定时签到流水线（土豆每日自动签到）
-# 路径：仓库根 /.workflow/ 下（不是 GitHub 的 .github/workflows）。
-# Gitee Go 执行器在国内（腾讯云），可直连 api.td.tudouai.cn，无需 Cloudflare 中转。
+# 路径：仓库根 /.workflow/ 下。Gitee Go 执行器在国内(腾讯云)，可直连 api.td.tudouai.cn，无需中转。
 name: tudou-sign
 displayName: 土豆签到
 
@@ -14,14 +13,12 @@ triggers:
       branch: master
 
 stages:
-  - stage:
-      name: sign-stage
-      displayName: 执行签到
-      failFast: true
-      steps:
-        - step: bash@1
-          name: run-sign
-          displayName: 安装依赖并签到
-          inputs:
-            script: |
-              npm install && node sign.js
+  - name: sign-stage
+    displayName: 执行签到
+    steps:
+      - name: run-sign
+        displayName: 安装依赖并签到
+        step: bash@1
+        inputs:
+          script: |
+            npm install && node sign.js
