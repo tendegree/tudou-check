@@ -41,6 +41,8 @@ jobs:
           TUDOUAI_ACCOUNT5_TOKEN: ${{ secrets.TUDOUAI_ACCOUNT5_TOKEN }}
           # 允许脚本在自动登录后把新 JWT 写回各账号 TOKEN secret（需 secrets 读写权限的 PAT）
           GH_PAT: ${{ secrets.GH_PAT }}
+          # GitHub runner 上 Node fetch 默认优先解析 IPv6，域名不通会直接报 "fetch failed"；强制 IPv4 优先（脚本另有指数退避重试兜底）
+          NODE_OPTIONS: --dns-result-order=ipv4first
           # —— 通知渠道（可选，配了才发；来源 tendegree/wj-atuo 的多渠道通知方案）——
           WECOM_BOT_KEY: ${{ secrets.WECOM_BOT_KEY }}
           DINGTALK_BOT_KEY: ${{ secrets.DINGTALK_BOT_KEY }}

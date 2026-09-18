@@ -13,6 +13,7 @@ import { ENDPOINTS, CLIENTID, listAccounts } from './src/config.js';
 import { logIn } from './src/auth.js';
 import { correctOption } from './src/mc-bank.js';
 import { sendNotify } from './src/notify.js';
+import { fetchRetry } from './src/net.js';
 
 // 模拟真实用户操作间隔：每次网络动作之间随机停顿 5-8 秒，避免高频调用触发风控。
 function sleepRandom() {
@@ -44,7 +45,7 @@ async function quizSign(jwt, label) {
   const attempts = [];
   for (let i = 1; i <= MAX_ATTEMPTS; i++) {
     await sleepRandom(); // 人控间隔：取题前停顿
-    const gr = await fetch(ENDPOINTS.qaGenerate, { headers: authHeaders(jwt) });
+    const gr = await fetchRetry(ENDPOINTS.qaGenerate, { headers: authHeaders(jwt) }, { log: (m) => console.error(`[${label}][net] ${m}`) });
     const g = await gr.json();
     if (isUnauth(gr.status, g, g?.msg)) return { ok: false, tokenInvalid: true, attempts, msg: 'token 无效' };
     const q = g?.data;
@@ -57,11 +58,11 @@ async function quizSign(jwt, label) {
     const answer = banked || pickRandom(q.options);
 
     await sleepRandom(); // 人控间隔：“思考作答”后再提交
-    const res = await fetch(ENDPOINTS.signWithQa, {
+    const res = await fetchRetry(ENDPOINTS.signWithQa, {
       method: 'POST',
       headers: { ...authHeaders(jwt), 'Content-Type': 'application/json;charset=UTF-8' },
       body: JSON.stringify({ useQaCaptcha: true, uuid: q.uuid, captchaAnswer: answer }),
-    });
+    }, { log: (m) => console.error(`[${label}][net] ${m}`) });
     const v = await res.json();
     if (isUnauth(res.status, v, v?.msg)) return { ok: false, tokenInvalid: true, attempts, msg: 'token 无效' };
     const ok = v?.code === 200;
@@ -85,8 +86,8 @@ function authHeaders(jwt) {
 }
 
 // 幂等：已完成(code 500 但 msg 含"已")视为成功，不报错；只有真正失败才 ok=false。
-async function emptyPost(url, jwt) {
-  const res = await fetch(url, {
+async function emptyPost(url, jwt, label) {
+  const res = await fetchRetry(url, {
     method: 'POST',
     headers: {
       Accept: 'application/json, text/plain, */*',
@@ -98,7 +99,7 @@ async function emptyPost(url, jwt) {
       Referer: 'https://tudouai.cn/',
     },
     body: undefined, // 真实请求 body 为空（content-length: 0）
-  });
+  }, { log: (m) => console.error(`[${label}][net] ${m}`) });
   const text = await res.text();
   let data;
   try {
@@ -122,7 +123,7 @@ async function execute(jwt, label) {
     ['shareTask', ENDPOINTS.shareTask],
   ]) {
     await sleepRandom(); // 人控间隔：任务与任务之间停一下
-    const r = await emptyPost(url, jwt);
+    const r = await emptyPost(url, jwt, label);
     steps.push({ step: name, account: label, ok: r.ok, status: r.status, code: r.code, msg: r.msg, alreadyDone: r.alreadyDone, tokenInvalid: r.tokenInvalid });
   }
   const q = { step: 'quizSign', account: label, ...(await quizSign(jwt, label)) };

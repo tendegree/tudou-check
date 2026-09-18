@@ -7,6 +7,7 @@
 
 import { randomBytes, createPublicKey, publicEncrypt, constants, createCipheriv, createDecipheriv } from 'node:crypto';
 import { ENDPOINTS, creds, CLIENTID, RSA_PUBLIC_KEY_DER } from './config.js';
+import { fetchRetry } from './net.js';
 
 const AES_KEY_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -43,7 +44,7 @@ async function logIn(credential) {
   const encryptedBody = aesEncrypt(JSON.stringify(plainBody), aesKey);
   const encryptKey = rsaEncrypt(RSA_PUBLIC_KEY_DER, Buffer.from(Buffer.from(aesKey, 'utf8').toString('base64'), 'utf8'));
 
-  const res = await fetch(ENDPOINTS.login, {
+  const res = await fetchRetry(ENDPOINTS.login, {
     method: 'POST',
     headers: {
       Accept: 'application/json, text/plain, */*',
@@ -58,7 +59,7 @@ async function logIn(credential) {
       repeatsubmit: 'false',
     },
     body: encryptedBody,
-  });
+  }, { log: (m) => console.error(`[auth][net] ${m}`) });
 
   const ciphertext = await res.text();
   console.error('[auth] HTTP', res.status); // 只打状态码，不回显响应体，避免泄露 token
