@@ -21,4 +21,11 @@ stages:
         displayName: 运行签到脚本
         nodeVersion: '20'
         commands:
-          - node sign.js
+          # 该运行镜像未预装 node，这里从国内镜像下载 Node 二进制后再执行签到脚本
+          - |
+            set -e
+            mkdir -p /tmp/node
+            curl -fsSL --retry 3 https://npmmirror.com/mirrors/node/v20.9.0/node-v20.9.0-linux-x64.tar.gz | tar -xz -C /tmp/node --strip-components=1
+            export PATH=/tmp/node/bin:$PATH
+            node -v
+            node sign.js
