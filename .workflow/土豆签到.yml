@@ -18,7 +18,7 @@ stages:
     steps:
       - step: build@nodejs
         name: run_sign
-        displayName: 安装依赖并签到
+        displayName: 运行签到脚本
         nodeVersion: '20'
         commands:
-          - npm install && node sign.js
+          - node sign.js
