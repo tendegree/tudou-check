@@ -12,6 +12,11 @@ triggers:
       precise:
         - master
 
+variables:
+  global:
+    - TUDOUAI_USER
+    - TUDOUAI_TOKEN
+
 stages:
   - name: sign-stage
     displayName: 执行签到
