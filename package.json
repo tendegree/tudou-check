@@ -1,0 +1,12 @@
+{
+  "name": "tudouai-auto-sign",
+  "version": "1.0.0",
+  "description": "tudouai.cn 每日自动签到（GitHub Actions）",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "sign": "node sign.js"
+  }
+}

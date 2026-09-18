@@ -1,0 +1,42 @@
+name: tudouai 每日自动签到
+
+on:
+  schedule:
+    # 每天 08:00 北京时间（UTC 00:00）
+    - cron: '0 0 * * *'
+  workflow_dispatch: {} # 支持手动触发测试
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 运行签到脚本
+        env:
+          TUDOUAI_USERNAME: ${{ secrets.TUDOUAI_USERNAME }}
+          TUDOUAI_PASSWORD: ${{ secrets.TUDOUAI_PASSWORD }}
+          TUDOUAI_TOKEN: ${{ secrets.TUDOUAI_TOKEN }}
+        run: node sign.js
+
+  notify:
+    needs: sign
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      # 失败通知：默认在仓库开一条 issue。如需其他通道（webhook/邮件）在此扩展或用外部 action。
+      - name: 签到失败通知
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'tudouai 签到失败',
+              body: `运行 ${context.runNumber} 失败，请查看：[运行日志](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+            });
