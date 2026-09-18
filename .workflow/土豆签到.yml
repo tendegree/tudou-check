@@ -1,28 +1,24 @@
-# Gitee Go 定时签到流水线（土豆每日自动签到）
-# 路径：仓库根 /.workflow/ 下。执行器在国内(腾讯云)，可直连 api.td.tudouai.cn，无需中转。
-# 环境变量(凭据/通知)请在 Gitee 仓库「CI/CD 变量」中注册，脚本通过 process.env 读取。
+# Gitee Go 流水线（土豆每日自动签到）
+# 新版 Gitee Go 结构：stages 元素直接用 - name:，没有 - stage: 包裹层。
+# 执行器在国内(腾讯云)，可直连 api.td.tudouai.cn，无需中转。
+# 凭据/通知变量请在 Gitee「流水线 → 通用变量/CI CD 变量」登记，脚本经 process.env 读取。
 version: '1.0'
 name: tudou-sign
 displayName: 土豆签到
 
 triggers:
-  schedule:
-    - matchType: PRECISE
-      branch: master
-      cron: '0 0 0 * * ?'   # 每天 00:00 UTC = 08:00 北京时间
   push:
-    - matchType: BRANCH_OR_TAG
-      branch: master
+    branches:
+      precise:
+        - master
 
 stages:
-  - stage:
-      name: sign-stage
-      displayName: 执行签到
-      failFast: true
-      steps:
-        - step: build@nodejs
-          name: run_sign
-          displayName: 安装依赖并签到
-          nodeVersion: '20'
-          commands:
-            - npm install && node sign.js
+  - name: sign-stage
+    displayName: 执行签到
+    steps:
+      - step: build@nodejs
+        name: run_sign
+        displayName: 安装依赖并签到
+        nodeVersion: '20'
+        commands:
+          - npm install && node sign.js
