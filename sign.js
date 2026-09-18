@@ -9,7 +9,7 @@
 // 登录走 RuoYi 网关 /auth/pterodactylLogin（AES+RSA 加密，body 含 datetime/grantType="pterodactyl"）。
 
 import { execFileSync } from 'node:child_process';
-import { ENDPOINTS, CLIENTID, listAccounts } from './src/config.js';
+import { ENDPOINTS, CLIENTID, listAccounts, parseTokenList } from './src/config.js';
 import { logIn } from './src/auth.js';
 import { correctOption } from './src/mc-bank.js';
 import { sendNotify } from './src/notify.js';
@@ -152,6 +152,15 @@ async function rotateSecret(jwt, secretName = 'TUDOUAI_TOKEN') {
   }
 }
 
+// 新格式（TUDOUAI_USER）下，用第 idx 个账号的最新 JWT 重组整个 TUDOUAI_TOKEN 分号串写回：
+// 从当前 TOKEN 串解析出列表，把第 idx 位换成新 JWT（不足处自动补位），join(';') 保持与账号顺序对齐。
+function rebuildTokenList(jwt, idx) {
+  const list = parseTokenList(process.env.TUDOUAI_TOKEN);
+  while (list.length <= idx) list.push(null);
+  list[idx] = jwt;
+  return list.join(';');
+}
+
 async function run() {
   const steps = [];
   const push = (...oos) => steps.push(...oos);
@@ -160,7 +169,8 @@ async function run() {
     const accounts = listAccounts();
     push({ step: 'accounts', ok: true, msg: `共 ${accounts.length} 个账号` });
 
-    for (const acct of accounts) {
+    for (let ai = 0; ai < accounts.length; ai++) {
+      const acct = accounts[ai];
       await sleepRandom(); // 人控间隔：切换账号前停一下
 
       let jwt;
@@ -182,7 +192,11 @@ async function run() {
         const a = await logIn({ username: acct.username, password: acct.password });
         jwt = a.token;
         push({ step: 'autoLogin', account: acct.label, ok: true, tokenLen: jwt.length });
-        push({ step: 'rotateSecret', account: acct.label, ...(await rotateSecret(jwt, acct.tokenSecretName)) }); // 写回该账号 secret 供下次复用
+        // 写回供下次复用：新格式按序号重组整个 TUDOUAI_TOKEN 串；旧格式写回该账号 secret
+        const rotate = acct.groupToken
+          ? await rotateSecret(rebuildTokenList(jwt, ai), 'TUDOUAI_TOKEN')
+          : await rotateSecret(jwt, acct.tokenSecretName);
+        push({ step: 'rotateSecret', account: acct.label, ...rotate });
         await sleepRandom(); // 人控间隔：登录完成后停一下再重跑
         res = await execute(jwt, acct.label); // 用新 JWT 重跑任务
       }

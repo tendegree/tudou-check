@@ -19,10 +19,16 @@ jobs:
 
       - name: 运行签到脚本
         env:
-          # 单账号（无序号）
+          # 多账号（推荐，新格式单 secret）："账号1，密码1;账号2，密码2"
+          TUDOUAI_USER: ${{ secrets.TUDOUAI_USER }}
+          # 多账号 JWT 串（分号分隔，与账号一一对应；可留空走自动登录）
+          TUDOUAI_TOKEN: ${{ secrets.TUDOUAI_TOKEN }}
+          # 转发代理基址：GitHub runner 海外无法直连 api.td.tudouai.cn（ENOTFOUND），
+          #   部署 worker/index.js 到 Cloudflare 后把其地址填到 API_BASE（不填则直连）
+          API_BASE: ${{ secrets.API_BASE }}
+          # 单账号（旧格式兼容，无序号）
           TUDOUAI_USERNAME: ${{ secrets.TUDOUAI_USERNAME }}
           TUDOUAI_PASSWORD: ${{ secrets.TUDOUAI_PASSWORD }}
-          TUDOUAI_TOKEN: ${{ secrets.TUDOUAI_TOKEN }}
           # 多账号（序号 1..5；配了哪个就签哪个，更多账号复制下面 3 行改序号即可）
           TUDOUAI_ACCOUNT1_USERNAME: ${{ secrets.TUDOUAI_ACCOUNT1_USERNAME }}
           TUDOUAI_ACCOUNT1_PASSWORD: ${{ secrets.TUDOUAI_ACCOUNT1_PASSWORD }}
