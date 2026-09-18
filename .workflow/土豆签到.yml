@@ -1,6 +1,7 @@
 # Gitee Go 定时签到流水线（土豆每日自动签到）
 # 路径：仓库根 /.workflow/ 下。执行器在国内(腾讯云)，可直连 api.td.tudouai.cn，无需中转。
 # 环境变量(凭据/通知)请在 Gitee 仓库「CI/CD 变量」中注册，脚本通过 process.env 读取。
+version: '1.0'
 name: tudou-sign
 displayName: 土豆签到
 
