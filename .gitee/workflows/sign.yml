@@ -1,0 +1,26 @@
+# Gitee Go 定时签到流水线（土豆每日自动签到）
+# 说明：Gitee Go 执行器在国内（腾讯云），可直接访问 api.td.tudouai.cn，
+#       无需 Cloudflare 中转（省掉 worker）。字段以官网 gitee.com/features/gitee_go 文档为准，
+#       若字段不被识别，请在网页控制台创建流水线（更稳定），此文件仅作参考。
+name: tudou-daily-sign
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 每天 08:00 北京时间（UTC 00:00）
+  workflow_dispatch: {}   # 支持手动触发验证
+
+resources:
+  - type: git
+    path: ${CI_WORKSPACE}
+    ref: master
+
+jobs:
+  sign:
+    runs-on: ubuntu
+    steps:
+      # 环境变量（凭据 / 通知渠道）请在 Gitee Go 网页控制台的「环境变量 / 自定义变量」中注入，不入库：
+      #   TUDOUAI_USER   = 账号1，密码1;账号2，密码2
+      #   TUDOUAI_TOKEN  = JWT1;JWT2（可留空自动登录）
+      #   通知渠道 WECOM_BOT_KEY / DINGTALK_BOT_KEY / ... 见 README
+      - name: 安装依赖并签到
+        run: npm install && node sign.js
