@@ -36,10 +36,50 @@ export function creds() {
   return { username, password };
 }
 
+export function hasToken() {
+  return !!process.env.TUDOUAI_TOKEN;
+}
+
 export function token() {
   const t = process.env.TUDOUAI_TOKEN;
   if (!t) {
     throw new Error('缺少 TUDOUAI_TOKEN 环境变量（登录后从 localStorage 的 Admin-Token 手动取出）');
   }
   return t;
+}
+
+// 多账号列表。两种配置方式：
+//  A. 单账号（兼容旧配置）：
+//     TUDOUAI_USERNAME + TUDOUAI_PASSWORD + TUDOUAI_TOKEN
+//  B. 多账号（推荐，字母 N 从 1 递增）：
+//     TUDOUAI_ACCOUNT1_USERNAME / TUDOUAI_ACCOUNT1_PASSWORD / TUDOUAI_ACCOUNT1_TOKEN
+//     TUDOUAI_ACCOUNT2_USERNAME / ... 依此类推。
+// 返回 [{ username, password, token, label, tokenSecretName }]。
+// 若同时配置了无序号账号和序号账号，两者都会执行（一般二选一）。
+export function listAccounts() {
+  const accounts = [];
+  if (process.env.TUDOUAI_USERNAME) {
+    accounts.push({
+      label: '账号1',
+      username: process.env.TUDOUAI_USERNAME,
+      password: process.env.TUDOUAI_PASSWORD,
+      token: process.env.TUDOUAI_TOKEN,
+      tokenSecretName: 'TUDOUAI_TOKEN',
+    });
+  }
+  for (let n = 1; n < 50; n++) {
+    const username = process.env[`TUDOUAI_ACCOUNT${n}_USERNAME`];
+    if (!username) break;
+    accounts.push({
+      label: `账号${n + (process.env.TUDOUAI_USERNAME ? 1 : 0)}`,
+      username,
+      password: process.env[`TUDOUAI_ACCOUNT${n}_PASSWORD`],
+      token: process.env[`TUDOUAI_ACCOUNT${n}_TOKEN`],
+      tokenSecretName: `TUDOUAI_ACCOUNT${n}_TOKEN`,
+    });
+  }
+  if (accounts.length === 0) {
+    throw new Error('未配置任何账号：请设置 TUDOUAI_USERNAME(/PASSWORD) 或 TUDOUAI_ACCOUNT1_USERNAME(/PASSWORD)');
+  }
+  return accounts;
 }

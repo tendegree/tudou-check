@@ -9,7 +9,7 @@ on:
 jobs:
   sign:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -19,9 +19,47 @@ jobs:
 
       - name: 运行签到脚本
         env:
+          # 单账号（无序号）
           TUDOUAI_USERNAME: ${{ secrets.TUDOUAI_USERNAME }}
           TUDOUAI_PASSWORD: ${{ secrets.TUDOUAI_PASSWORD }}
           TUDOUAI_TOKEN: ${{ secrets.TUDOUAI_TOKEN }}
+          # 多账号（序号 1..5；配了哪个就签哪个，更多账号复制下面 3 行改序号即可）
+          TUDOUAI_ACCOUNT1_USERNAME: ${{ secrets.TUDOUAI_ACCOUNT1_USERNAME }}
+          TUDOUAI_ACCOUNT1_PASSWORD: ${{ secrets.TUDOUAI_ACCOUNT1_PASSWORD }}
+          TUDOUAI_ACCOUNT1_TOKEN: ${{ secrets.TUDOUAI_ACCOUNT1_TOKEN }}
+          TUDOUAI_ACCOUNT2_USERNAME: ${{ secrets.TUDOUAI_ACCOUNT2_USERNAME }}
+          TUDOUAI_ACCOUNT2_PASSWORD: ${{ secrets.TUDOUAI_ACCOUNT2_PASSWORD }}
+          TUDOUAI_ACCOUNT2_TOKEN: ${{ secrets.TUDOUAI_ACCOUNT2_TOKEN }}
+          TUDOUAI_ACCOUNT3_USERNAME: ${{ secrets.TUDOUAI_ACCOUNT3_USERNAME }}
+          TUDOUAI_ACCOUNT3_PASSWORD: ${{ secrets.TUDOUAI_ACCOUNT3_PASSWORD }}
+          TUDOUAI_ACCOUNT3_TOKEN: ${{ secrets.TUDOUAI_ACCOUNT3_TOKEN }}
+          TUDOUAI_ACCOUNT4_USERNAME: ${{ secrets.TUDOUAI_ACCOUNT4_USERNAME }}
+          TUDOUAI_ACCOUNT4_PASSWORD: ${{ secrets.TUDOUAI_ACCOUNT4_PASSWORD }}
+          TUDOUAI_ACCOUNT4_TOKEN: ${{ secrets.TUDOUAI_ACCOUNT4_TOKEN }}
+          TUDOUAI_ACCOUNT5_USERNAME: ${{ secrets.TUDOUAI_ACCOUNT5_USERNAME }}
+          TUDOUAI_ACCOUNT5_PASSWORD: ${{ secrets.TUDOUAI_ACCOUNT5_PASSWORD }}
+          TUDOUAI_ACCOUNT5_TOKEN: ${{ secrets.TUDOUAI_ACCOUNT5_TOKEN }}
+          # 允许脚本在自动登录后把新 JWT 写回各账号 TOKEN secret（需 secrets 读写权限的 PAT）
+          GH_PAT: ${{ secrets.GH_PAT }}
+          # —— 通知渠道（可选，配了才发；来源 tendegree/wj-atuo 的多渠道通知方案）——
+          WECOM_BOT_KEY: ${{ secrets.WECOM_BOT_KEY }}
+          DINGTALK_BOT_KEY: ${{ secrets.DINGTALK_BOT_KEY }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          FEISHU_BOT_KEY: ${{ secrets.FEISHU_BOT_KEY }}
+          YUNHU_BOT_KEY: ${{ secrets.YUNHU_BOT_KEY }}
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          PUSHPLUS_TOPIC: ${{ secrets.PUSHPLUS_TOPIC }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          BARK_KEY: ${{ secrets.BARK_KEY }}
+          BARK_GROUP: ${{ secrets.BARK_GROUP }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
         run: node sign.js
 
   notify:

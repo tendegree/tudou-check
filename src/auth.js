@@ -34,10 +34,13 @@ function aesDecrypt(b64, key) {
   return decipher.update(b64, 'base64', 'utf8') + decipher.final('utf8');
 }
 
-async function logIn() {
-  const { username, password } = creds();
+async function logIn(credential) {
+  const { username, password } = credential || creds();
   const aesKey = randomAesKey();
-  const encryptedBody = aesEncrypt(JSON.stringify({ username, password }), aesKey);
+  // 明文结构来自前端跨包源码 wu()：无常量 loginType；grantType 固定为 'pterodactyl'；
+  //   datetime 为 epoch 毫秒，服务端据此判定新鲜度，缺失/过期即"验证码已失效"。
+  const plainBody = { datetime: Date.now(), username, password, clientId: CLIENTID, grantType: 'pterodactyl' };
+  const encryptedBody = aesEncrypt(JSON.stringify(plainBody), aesKey);
   const encryptKey = rsaEncrypt(RSA_PUBLIC_KEY_DER, Buffer.from(Buffer.from(aesKey, 'utf8').toString('base64'), 'utf8'));
 
   const res = await fetch(ENDPOINTS.login, {
@@ -58,16 +61,28 @@ async function logIn() {
   });
 
   const ciphertext = await res.text();
-  // 响应同样用本会话 aesKey 加密，直接解。
-  const plain = aesDecrypt(ciphertext, aesKey);
+  console.error('[auth] HTTP', res.status); // 只打状态码，不回显响应体，避免泄露 token
+
+  // 响应可能是明文JSON（如错误时 "认证客户端id不能为空"），也可能是加密token。
+  // 先尝试明文解析；若不是 JSON 再按加密解密。
+  let plain;
   let data;
   try {
-    data = JSON.parse(plain);
+    data = JSON.parse(ciphertext);
+    plain = ciphertext;
   } catch {
-    throw new Error(`登录解签失败（HTTP ${res.status}）：${ciphertext.slice(0, 120)}`);
+    try {
+      plain = aesDecrypt(ciphertext, aesKey);
+      data = JSON.parse(plain);
+    } catch (e2) {
+      throw new Error(`登录响应解密失败(HTTP ${res.status})`); // 不回显密文
+    }
+  }
+  if (data?.code && data?.code !== 200) {
+    throw new Error(`登录失败(code ${data.code})：${data.msg || ''}`);
   }
   const token = extractToken(data);
-  if (!token) throw new Error(`登录未返回 token：${plain.slice(0, 300)}`);
+  if (!token) throw new Error(`登录响应缺少 token(HTTP ${res.status})`); // 不打印明文响应体
   return { token, clientId: CLIENTID };
 }
 
