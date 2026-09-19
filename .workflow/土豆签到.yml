@@ -8,8 +8,8 @@ displayName: 土豆签到
 
 triggers:
   schedule:
-    # 每天 00:00 UTC = 08:00 北京时间（若新版不识别此字段会报 trigger 错，但 push 触发不受影响）
-    - cron: '0 0 0 * * ?'
+    #  = 08:00 北京时间 Gitee上是默认北京时间
+    - cron: '0 8 0 * * ?'
       matchType: PRECISE
       branch: master
   push:
