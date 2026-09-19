@@ -213,13 +213,41 @@ async function run() {
 
   // 多渠道通知（通过环境变量启用，未配置渠道自动跳过；正文不含任何敏感明文）
   try {
-    const title = `${allOk ? '✅' : '⚠️'} 土豆AI 每日签到`;
-    const lines = steps.map((s) => {
-      const head = s.account ? `[${s.account}] ${s.step}` : s.step;
-      const body = [head, s.ok === false ? '失败' : '成功', s.msg || '', s.code != null ? `code=${s.code}` : '', s.tokenInvalid ? 'tokenInvalid' : ''].filter(Boolean).join(' | ');
-      return `- ${body}`;
-    });
-    await sendNotify(title, `时间: ${new Date().toLocaleString('zh-CN')}\n结果: ${allOk ? '全部成功' : '存在失败'}\n${lines.join('\n')}`);
+    const title = `${allOk ? '✅' : '⚠️'} 土豆每日签到`;
+    // 按账号分组，每个账号列出三个任务的中文名与状态
+    const accountLabels = [...new Set(steps.filter((s) => s.account).map((s) => s.account))];
+    const TASK_MAP = [
+      ['quizSign', '个人中心签到'],
+      ['communitySign', '社区签到'],
+      ['shareTask', '分享任务'],
+    ];
+    const rows = [];
+    for (const label of accountLabels) {
+      rows.push(`   [${label}]：`);
+      for (const [step, name] of TASK_MAP) {
+        const s = steps.find((x) => x.account === label && x.step === step);
+        const st = s
+          ? s.alreadyDone
+            ? '今日已签到，请勿重复'
+            : s.ok === false
+              ? `失败${s.msg ? `：${s.msg}` : ''}`
+              : '成功'
+          : '未运行';
+        rows.push(`        ${name}  |${st}|`);
+      }
+    }
+    // 全局性步骤（如 fatal）附加在末尾，方便排错
+    for (const s of steps.filter((x) => !x.account && x.step !== 'accounts')) {
+      rows.push(`   (全局) ${s.step}: ${s.ok === false ? '失败' : '成功'}${s.msg ? ' ' + s.msg : ''}`);
+    }
+    await sendNotify(
+      title,
+      [
+        `时间: ${new Date().toLocaleString('zh-CN')}`,
+        `结果: ${allOk ? '全部成功' : '存在失败'}，共 ${accountLabels.length} 个账号`,
+        ...rows,
+      ].join('\n'),
+    );
   } catch (e) {
     console.error('通知发送异常(不影响签到结果):', e.message);
   }
